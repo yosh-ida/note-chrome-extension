@@ -1,51 +1,63 @@
-window.onload = function () {
-	var button = document.getElementsByTagName('button')[2];
-	console.log(button);
-	button.onclick = function () {
-		var x = document.getElementById('note-body');
-		var text = x.innerHTML.split('>')[1].split('<')[0];
-		console.log(text);
-	};
-	const target = document.getElementsByClassName('modal-content-wrapper')[0];
-	const observer = new MutationObserver(records => {
-		if (target.getAttribute('aria-hidden') == 'true')
-			return;
-		console.log(target.cloneNode(true));
-		const header = target.getElementsByTagName('header')[0];
-		console.log(header.cloneNode(true));
+document.addEventListener('click', post_settings);
 
-		const group_top = document.createElement('div');
-		group_top.setAttribute('data-v-14fc9452', "");
-		group_top.setAttribute('data-v-74d3cf95', "");
-		group_top.classList.add('hashtag-suggested');
-		group_top.classList.add('hashtag-recommend-group');
-		group_top.innerHTML = '<div data-v-14fc9452 class="m-tagList__title"><div data-v-74d3cf95 data-v-14fc9452>bigdataのおすすめ</div></div>'
+function get_title_and_content() {
+	var x = document.getElementById('note-body');
+	var y = document.getElementById('note-name');
+	var text = x.innerHTML.split('>')[1].split('<')[0];
+	var title = y.innerHTML;
+	return { "content": text, "title": title };
+}
 
-		const group_head = document.createElement('ul');
-		group_head.setAttribute('data-v-14fc9452', "");
-		group_head.classList.add("hashtag-recommend-group__body");
-		group_top.appendChild(group_head);
+function post_settings(event) {
+	if (event.target.innerText == "公開設定") {
+		var request = get_title_and_content();
+		console.log(request);
+		$.ajax({
+			url: "https://bigdatatagger.github.io/data/info_url.json",
+			dataType: "text",
+			cache: false,
+			success: (data) => {
+				var request_url = JSON.parse(data)["url"] + "/process";
+				var posting = $.post(request_url, request);
+				var response;
+				console.log(request_url);
+				posting.done((data) => {
+					response = data["tags"];
+					console.log("response", response);
+					insert_tags(response);
+					insert_js();
+				});
+			}
+		});
+		setTimeout(() => {
+			console.log('insert default tags.');
+			var s = document.createElement("script");
+			s.src = chrome.runtime.getURL("defaultTags.js");
+			document.body.appendChild(s);
+		}, 800);
+	}
+}
 
-		console.log(group_top.cloneNode(true));
+function insert_js() {
+	var s = document.createElement("script");
+	s.src = chrome.runtime.getURL("addTags.js");
+	document.body.appendChild(s);
+}
 
-		header.insertBefore(group_top, null);
-
-		const elem = document.createElement('li');
-		elem.setAttribute('data-v-14fc9452', "");
-		elem.classList.add("hashtag-recommend-group__item");
-		elem.innerHTML = '<span data-v-536dcd77="" data-v-14fc9452="" class="hashtag"><div data-v-536dcd77="" class="a-tag a-tag__size_small"><div data-v-536dcd77="" class="a-tag__label">#bigdata</div></div></span>';
-		elem.onclick = function () {
-			const input_body = target.getElementsByClassName('m-tagInput__body')[0]
-			if (input_body == null)
-				return;
-			input_body.insertAdjacentHTML('afterbegin',
-				'<span data-v-536dcd77="" data-v-3dcb2f50="" class="m-tagInput__item"><div data-v-536dcd77="" class="a-tag a-tag__size_medium"><div data-v-536dcd77="" class="a-tag__label">#bigdata</div> <i data-v-536dcd77="" aria-label="close" class="a-tag__close a-icon a-icon--close a-icon--size_small"></i></div></span>');
-		};
-
-		group_head.appendChild(elem);
-	});
-	observer.observe(target, {
-		attributes: true,
-		attributeFilter: ['aria-hidden']
-	});
-};
+function insert_tags(tags) {
+	var elem_list = document.getElementById("big-data-suggestion-list");
+	if (elem_list)
+		elem_list.innerHTML = "";
+	else {
+		elem_list = document.createElement("div");
+		elem_list.id = "big-data-suggestion-list";
+		document.body.appendChild(elem_list);
+	}
+	for (var i in tags) {
+		var elem = document.createElement("div")
+		elem.className = "bid-data-suggestions-tags";
+		elem.style.display = "none";
+		elem.innerText = tags[i];
+		elem_list.appendChild(elem);
+	}
+}

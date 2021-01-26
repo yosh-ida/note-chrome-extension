@@ -1,12 +1,28 @@
 {
-  "name": "Bigdata Extension",
-  "version": "1.0.0",
-  "manifest_version": 2,
-  "description": "Bigdata Extension for note",
-  "content_scripts": [{
-    "matches": ["https://note.com/notes/new"],
-    "js": [
-      "content.js"
+    "name": "Bigdata Extension",
+    "version": "1.0.0",
+    "manifest_version": 2,
+    "description": "Bigdata Extension for note",
+    "content_scripts": [
+        {
+            "matches": [
+                "https://note.com/",
+                "https://note.com/*",
+                "https://note.com/*/*"
+            ],
+            "js": [
+                "jquery.js",
+                "content.js"
+            ]
+        }
+    ],
+    "permissions": [
+        "tabs",
+        "activeTab",
+        "https://note.com/notes/new"
+    ],
+    "web_accessible_resources": [
+        "addTags.js",
+        "defaultTags.js"
     ]
-  }]
 }
